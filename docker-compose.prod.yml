@@ -1,0 +1,50 @@
+version: '3.7'
+
+services:
+  web:
+    ports:
+      - "80:80"
+      - "443:443"
+    secrets:
+      - source: web-certificate
+        target: wsfed.crt
+        uid: '100'
+        gid: '101'
+        mode: 0400
+      - source: web-key
+        target: wsfed.rsa
+        uid: '100'
+        gid: '101'
+        mode: 0400
+      - source: web-pass
+        target: wsfed.pass
+        uid: '100'
+        gid: '101'
+        mode: 0400
+    configs:
+      - source: web-configuration
+        target: /etc/nginx/nginx.conf
+      - source: server-configuration
+        target: /etc/nginx/conf.d/default.conf
+
+  app:
+    image: customer.com/org/wsfed
+    configs:
+      - source: app-configuration
+        target: /app/appsettings.json
+
+secrets:
+  web-certificate:
+    external: true
+  web-key:
+    external: true
+  web-pass:
+    external: true
+
+configs:
+  web-configuration:
+    external: true
+  server-configuration:
+    external: true
+  app-configuration:
+    external: true

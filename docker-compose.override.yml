@@ -1,0 +1,22 @@
+version: '3.7'
+
+services:
+  web:
+    ports:
+      - "443:443"
+      - "44396:443"
+    volumes:
+      - ./web.conf:/etc/nginx/nginx.conf
+      - ./server.conf:/etc/nginx/conf.d/default.conf
+  app:
+    build: .
+    volumes:
+      - ./appsettings.Development.json:/app/appsettings.json
+
+secrets:
+  web-certificate:
+    file: ./wsfed.crt
+  web-key:
+    file: ./wsfed.rsa
+  web-pass:
+    file: ./wsfed.pass

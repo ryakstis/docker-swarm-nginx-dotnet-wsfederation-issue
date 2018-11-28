@@ -1,0 +1,27 @@
+version: '3.7'
+
+services:
+  web:
+    image: nginx:alpine
+    secrets:
+      - source: web-certificate
+        target: wsfed.crt
+      - source: web-key
+        target: wsfed.rsa
+      - source: web-pass
+        target: wsfed.pass
+    links:
+      - app
+
+  app:
+    image: registry.corp.com/org/wsfed:dev
+
+secrets:
+  web-certificate:
+  web-key:
+  web-pass:
+
+configs:
+  web-configuration:
+  server-configuration:
+  app-configuration:

@@ -1,0 +1,16 @@
+.vs/
+*.swp
+*/*.swp
+*/*/*.swp
+.nyc_output/
+bin/
+Build\ Scripts/
+coverage/
+Dockerfile
+*.log
+*.md
+node_modules/
+obj/
+test/
+wwwroot/
+Dockerfile
