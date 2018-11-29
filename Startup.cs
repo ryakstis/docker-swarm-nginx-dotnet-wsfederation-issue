@@ -93,6 +93,33 @@ namespace wsfed_issue {
                         name: "spa-fallback",
                         defaults: new {controller = "Home", action = "Index"});
                 });
+
+            app.Use(Middleware);
+        }
+
+        private async Task Middleware(HttpContext context, Func<Task> next) {
+            context.Response.ContentType = "text/plain";
+
+            // Request method, scheme, and path
+            await context.Response.WriteAsync(
+                $"Request Method: {context.Request.Method}{Environment.NewLine}");
+            await context.Response.WriteAsync(
+                $"Request Scheme: {context.Request.Scheme}{Environment.NewLine}");
+            await context.Response.WriteAsync(
+                $"Request Path: {context.Request.Path}{Environment.NewLine}");
+
+            // Headers
+            await context.Response.WriteAsync($"Request Headers:{Environment.NewLine}");
+
+            foreach (var header in context.Request.Headers)
+                await context.Response.WriteAsync($"{header.Key}: " + $"{header.Value}{Environment.NewLine}");
+
+            await context.Response.WriteAsync(Environment.NewLine);
+
+            // Connection: RemoteIp
+            await context.Response.WriteAsync(
+                $"Request RemoteIp: {context.Connection.RemoteIpAddress}");
+            await next();
         }
     }
 }
