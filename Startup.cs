@@ -1,7 +1,12 @@
+using System;
+using System.Net;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.WsFederation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SpaServices.Webpack;
 using Microsoft.Extensions.Configuration;
@@ -22,6 +27,11 @@ namespace wsfed_issue {
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             services.AddDataProtection();
+            services.Configure<ForwardedHeadersOptions>(options => {
+                var addresses = Dns.GetHostAddresses("web");
+                foreach (var address in addresses)
+                    options.KnownProxies.Add(address);
+            });
 
             services.AddAuthentication(
                     auth => {
@@ -67,6 +77,10 @@ namespace wsfed_issue {
             }
 
             app.UseStaticFiles();
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            });
             app.UseAuthentication();
 
             app.UseMvc(
