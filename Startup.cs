@@ -1,5 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -39,12 +43,26 @@ namespace wsfed_issue {
             services.AddSingleton<IWeatherProvider, WeatherProviderFake>();
         }
 
-        private void ConfigureForwardedHeaders(
-            ForwardedHeadersOptions options) {
-            var addresses = Dns.GetHostAddresses("web");
+        private void ConfigureForwardedHeaders(ForwardedHeadersOptions options) {
+            options.KnownNetworks.Add(Network);
+        }
 
-            foreach (var address in addresses)
-                options.KnownProxies.Add(address);
+        private IPNetwork _network;
+
+        private IPNetwork Network => _network ?? (_network = new IPNetwork(LocalAddress, 16));
+
+        private IPAddress LocalAddress => NetworkInterface
+            .GetAllNetworkInterfaces()
+            .Where(n => n.OperationalStatus == OperationalStatus.Up)
+            .Where(n => n.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+            .SelectMany(n => n.GetIPProperties()?.GatewayAddresses)
+            .Select(ToGatewayAddress)
+            .FirstOrDefault(a => a != null);
+
+        private IPAddress ToGatewayAddress(GatewayIPAddressInformation info) {
+            var firstThreeOctets = info?.Address.GetAddressBytes().Take(3);
+            var octets = firstThreeOctets.Append((byte)0).ToArray();
+            return new IPAddress(octets);
         }
 
         private void AddAuthenticationTo(IServiceCollection services) {
@@ -87,10 +105,10 @@ namespace wsfed_issue {
                     | ForwardedHeaders.XForwardedProto
             };
             app.UseForwardedHeaders(forwardedOptions);
+            //app.Use(Middleware);
             app.UseAuthentication();
 
             app.UseMvc(ConfigureRoutes);
-            app.Use(Middleware);
         }
 
         private void ConfigureDevelopmentFor(IApplicationBuilder app) {
@@ -130,13 +148,16 @@ namespace wsfed_issue {
 
             foreach (var header in request.Headers)
                 await response.WriteAsync(
-                    $"{header.Key}: " + $"{header.Value}{newline}");
+                    $"{header.Key}: {header.Value}{newline}");
 
             await response.WriteAsync(newline);
 
             // Connection: RemoteIp
             await response.WriteAsync(
-                $"Request RemoteIp: {context.Connection.RemoteIpAddress}");
+                $"Request RemoteIp: {context.Connection.RemoteIpAddress}{newline}");
+
+            await response.WriteAsync($"Network: {Network.Prefix}");
+
             await next();
         }
     }
