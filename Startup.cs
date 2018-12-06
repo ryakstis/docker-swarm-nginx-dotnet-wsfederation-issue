@@ -49,7 +49,7 @@ namespace wsfed_issue {
 
         private IPNetwork _network;
 
-        private IPNetwork Network => _network ?? (_network = new IPNetwork(LocalAddress, 16));
+        private IPNetwork Network => _network ?? (_network = new IPNetwork(LocalAddress, 8));
 
         private IPAddress LocalAddress => NetworkInterface
             .GetAllNetworkInterfaces()
@@ -62,7 +62,7 @@ namespace wsfed_issue {
         private IPAddress ToGatewayAddress(GatewayIPAddressInformation info) {
             var firstThreeOctets = info?.Address.GetAddressBytes().Take(3);
             var octets = firstThreeOctets.Append((byte)0).ToArray();
-            return new IPAddress(octets);
+            return new IPAddress(octets).MapToIPv6();
         }
 
         private void AddAuthenticationTo(IServiceCollection services) {
