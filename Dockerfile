@@ -1,15 +1,15 @@
 # Build
-FROM microsoft/dotnet:2.1-sdk-alpine as dotnet
-RUN apk update && apk add nodejs python make gcc g++
+FROM microsoft/dotnet:2.2-sdk-alpine as dotnet
+RUN apk update && apk add nodejs npm python make gcc g++
 WORKDIR /source
 COPY . .
 RUN dotnet publish -c Release wsfed-issue.csproj
 
 # Run
-FROM microsoft/dotnet:2.1-aspnetcore-runtime-alpine
+FROM microsoft/dotnet:2.2-aspnetcore-runtime-alpine
 WORKDIR /app
 COPY --from=dotnet /source/wwwroot wwwroot/
-COPY --from=dotnet /source/bin/Release/netcoreapp2.1/publish/ .
+COPY --from=dotnet /source/bin/Release/netcoreapp2.2/publish/ .
 COPY root.cer /usr/local/share/ca-certificates/root3.crt
 COPY intermediate.cer /usr/local/share/ca-certificates/id-sw-38.crt
 RUN update-ca-certificates
