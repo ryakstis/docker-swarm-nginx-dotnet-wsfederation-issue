@@ -1,9 +1,5 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -44,25 +40,9 @@ namespace wsfed_issue {
         }
 
         private void ConfigureForwardedHeaders(ForwardedHeadersOptions options) {
-            options.KnownNetworks.Add(Network);
-        }
-
-        private IPNetwork _network;
-
-        private IPNetwork Network => _network ?? (_network = new IPNetwork(LocalAddress, 8));
-
-        private IPAddress LocalAddress => NetworkInterface
-            .GetAllNetworkInterfaces()
-            .Where(n => n.OperationalStatus == OperationalStatus.Up)
-            .Where(n => n.NetworkInterfaceType != NetworkInterfaceType.Loopback)
-            .SelectMany(n => n.GetIPProperties()?.GatewayAddresses)
-            .Select(ToGatewayAddress)
-            .FirstOrDefault(a => a != null);
-
-        private IPAddress ToGatewayAddress(GatewayIPAddressInformation info) {
-            var firstThreeOctets = info?.Address.GetAddressBytes().Take(3);
-            var octets = firstThreeOctets.Append((byte)0).ToArray();
-            return new IPAddress(octets).MapToIPv6();
+            var address = IPAddress.Parse("::ffff:172.18.0.0");
+            var network = new IPNetwork(address, 8);
+            options.KnownNetworks.Add(network);
         }
 
         private void AddAuthenticationTo(IServiceCollection services) {
@@ -155,8 +135,6 @@ namespace wsfed_issue {
             // Connection: RemoteIp
             await response.WriteAsync(
                 $"Request RemoteIp: {context.Connection.RemoteIpAddress}{newline}");
-
-            await response.WriteAsync($"Network: {Network.Prefix}");
 
             await next();
         }
